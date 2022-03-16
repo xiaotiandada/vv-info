@@ -4,6 +4,8 @@ import {useTopTokenAddresses} from './data/tokens/topTokens';
 import {useFetchedTokenDatas} from './data/tokens/tokenData';
 import {notEmpty} from './utils';
 import {TOKEN_HIDE} from './constants';
+import LineChart from './components/LineChart/alt';
+import {EthereumNetworkInfo} from './constants/networks';
 
 function App() {
 	const {addresses: allTokenData} = useTopTokenAddresses();
@@ -17,6 +19,9 @@ function App() {
 
 	return (
 		<div>
+			<h3 className="font-bold">Uniswap Overview</h3>
+			<LineChart color={EthereumNetworkInfo.primaryColor} />
+
 			<h3 className="font-bold">Top Tokens</h3>
 			<TokenTable tokenDatas={formattedTokens} />
 			<h3 className="font-bold">Top Pools</h3>
