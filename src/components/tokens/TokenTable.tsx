@@ -1,12 +1,20 @@
-import React from 'react';
+import React, {FC} from 'react';
 import {formatDollarAmount} from '../../utils/numbers';
 import Percent from '../Percent';
-import {tokenDatas} from './tokenDatas';
 import CurrencyLogo from '../CurrencyLogo';
+import {TokenData} from '../../data/tokens/tokenData';
 
-function TokenTable() {
+interface Props {
+	tokenDatas: TokenData[] | undefined
+}
+
+const TokenTable: FC<Props> = ({tokenDatas}) => {
+	if (!tokenDatas) {
+		return <span>Loading...</span>;
+	}
+
 	return (
-		<div className="overflow-x-auto w-11/12 mx-auto my-4">
+		<div className="overflow-x-auto w-11/12 mx-auto my-4 max-h-[400px]">
 			<table className="table w-full">
 				<thead>
 					<tr>
@@ -39,6 +47,6 @@ function TokenTable() {
 			</table>
 		</div>
 	);
-}
+};
 
 export default TokenTable;

@@ -1,10 +1,7 @@
 import React from 'react';
 
-const color = ({negative, neutral}: { negative: boolean; neutral: boolean }) => {
-	console.log('neutral', neutral);
-	return negative ? 'text-red-500' : 'text-green-500';
-};
-
+// eslint-disable-next-line no-unused-vars
+const color = ({negative, neutral}: { negative: boolean; neutral: boolean }) => negative ? 'text-red-500' : 'text-green-500';
 export interface LogoProps {
   value: number | undefined
   decimals?: number

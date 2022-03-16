@@ -1,37 +1,26 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {useMemo} from 'react';
 import TokenTable from './components/tokens/TokenTable';
+import {useTopTokenAddresses} from './data/tokens/topTokens';
+import {useFetchedTokenDatas} from './data/tokens/tokenData';
+import {notEmpty} from './utils';
+import {TOKEN_HIDE} from './constants';
 
 function App() {
+	const {addresses: allTokenData} = useTopTokenAddresses();
+	const {data: allTokens} = useFetchedTokenDatas(allTokenData || []);
+	console.log('allTokens', allTokens);
+
+	const formattedTokens = useMemo(() => Object.values(allTokens || {})
+		.map(t => t)
+		.filter(notEmpty)
+		.filter(t => !TOKEN_HIDE.includes(t.address)), [allTokens]);
+
 	return (
 		<div>
-
 			<h3 className="font-bold">Top Tokens</h3>
-			<TokenTable />
-
-			<header className="App-header">
-				<img src={logo} className="App-logo" alt="logo" />
-				<h1 className="text-3xl font-bold underline">
-          Hello world!
-				</h1>
-				<button className="btn btn-primary">Button</button>
-				<p>
-          Edit
-					{' '}
-					<code>src/App.tsx</code>
-					{' '}
-          and save to reload.
-				</p>
-				<a
-					className="App-link"
-					href="https://reactjs.org"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-          Learn React
-				</a>
-			</header>
+			<TokenTable tokenDatas={formattedTokens} />
+			<h3 className="font-bold">Top Pools</h3>
+			{/* <TokenTable /> */}
 		</div>
 	);
 }

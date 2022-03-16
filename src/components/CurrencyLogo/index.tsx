@@ -36,8 +36,7 @@ export default function CurrencyLogo({
 				{
 					isBed
 						? <HelpCircle />
-						: <img src={getTokenLogoURL(checkSummed)} alt={'token logo'} onError={({currentTarget}) => {
-							console.log('currentTarget', currentTarget);
+						: <img src={getTokenLogoURL(checkSummed)} alt={'token logo'} onError={() => {
 							setIsBed(true);
 						}} />
 				}
