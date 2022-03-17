@@ -32,7 +32,7 @@ export default function CurrencyLogo({
 
 	return (
 		<div className="avatar">
-			<div className="w-6 rounded-full">
+			<div className="rounded-full" style={{width: size, height: size}}>
 				{
 					isBed
 						? <HelpCircle />
