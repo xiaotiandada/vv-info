@@ -2,16 +2,20 @@ import React, {useMemo, useState} from 'react';
 import TokenTable from './components/tokens/TokenTable';
 import {useTopTokenAddresses} from './data/tokens/topTokens';
 import {TokenData, useFetchedTokenDatas} from './data/tokens/tokenData';
-import {notEmpty} from './utils';
+import {getEtherscanLink, notEmpty, shortenAddress} from './utils';
 import {TOKEN_HIDE} from './constants';
 import LineChart from './components/LineChart/alt';
 import BarChart from './components/BarChart/alt';
-import {EthereumNetworkInfo} from './constants/networks';
+import {EthereumNetworkInfo, PolygonNetworkInfo} from './constants/networks';
 import {formatDollarAmount} from './utils/numbers';
 import {useFetchGlobalChartData} from './data/protocol/chart';
 import {unixToDate} from './utils/date';
 import {VolumeWindow} from './types';
 import TopTokenMovers from './components/tokens/TopTokenMovers';
+import {useTokenData} from './data/tokens/hooks';
+import CurrencyLogo from './components/CurrencyLogo';
+import {networkPrefix} from './utils/networkPrefix';
+import Percent from './components/Percent';
 
 function UniswapOverview() {
 	const [volumeHover, setVolumeHover] = useState<number | undefined>();
@@ -141,7 +145,7 @@ function UniswapOverview() {
 function TopTokens() {
 	const {addresses: allTokenData} = useTopTokenAddresses();
 	const {data: allTokens} = useFetchedTokenDatas(allTokenData || []);
-	console.log('allTokens', allTokens);
+	// Console.log('allTokens', allTokens);
 
 	const formattedTokens = useMemo(() => Object.values(allTokens || {})
 		.map(t => t)
@@ -170,9 +174,84 @@ function TopMovers({allTokens}: {
 	);
 }
 
+function TokenPage() {
+	const address = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+
+	const {addresses: allTokenData} = useTopTokenAddresses();
+	const {data: allTokens} = useFetchedTokenDatas(allTokenData || []);
+
+	const tokenData = useTokenData(address, allTokens || {});
+	console.log('TokenPage allTokens', allTokens);
+
+	console.log('TokenPage tokenData', tokenData);
+
+	if (!tokenData) {
+		return <span>Loading...</span>;
+	}
+
+	return (
+		<div>
+			<h3 className="font-bold">Token</h3>
+			<div className="mx-6 my-6">
+				<div>
+					<CurrencyLogo address={tokenData!.address} />
+					<span className="ml-2">
+						{tokenData?.name}
+						<span className="ml-2 text-gray-400">({tokenData?.symbol})</span>
+					</span>
+				</div>
+
+				<span>{networkPrefix(EthereumNetworkInfo)}</span>
+				<br />
+				<span>{networkPrefix(PolygonNetworkInfo)}</span>
+				<br />
+				<span>({shortenAddress(tokenData.address)})</span>
+				<br />
+				<a href={getEtherscanLink(1, address, 'address', EthereumNetworkInfo)}>{tokenData.address}</a>
+				<br />
+				<span>{formatDollarAmount(tokenData.priceUSD)}<span className="ml-2">(<Percent value={tokenData.priceUSDChange} />)</span></span>
+
+				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
+
+					<div>
+						<div>TVL</div>
+						<div>{formatDollarAmount(tokenData.tvlUSD)}</div>
+						<Percent value={tokenData.tvlUSDChange} />
+					</div>
+
+					<div>
+						<div>24h Trading Vol</div>
+						<div>{formatDollarAmount(tokenData.volumeUSD)}</div>
+						<Percent value={tokenData.volumeUSDChange} />
+					</div>
+
+					<div>
+						<div>7d Trading Vol</div>
+						<div>{formatDollarAmount(tokenData.volumeUSDWeek)}</div>
+					</div>
+
+					<div>
+						<div>24h Fees</div>
+						<div>{formatDollarAmount(tokenData.feesUSD)}</div>
+					</div>
+
+				</div>
+
+				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
+
+					1111
+
+				</div>
+
+			</div>
+		</div>
+	);
+}
+
 function App() {
 	return (
 		<div>
+			<TokenPage />
 			<UniswapOverview />
 			<TopTokens />
 		</div>
