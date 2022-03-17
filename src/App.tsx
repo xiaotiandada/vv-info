@@ -16,6 +16,7 @@ import {useTokenData} from './data/tokens/hooks';
 import CurrencyLogo from './components/CurrencyLogo';
 import {networkPrefix} from './utils/networkPrefix';
 import Percent from './components/Percent';
+import CandleChart from './components/CandleChart';
 
 function UniswapOverview() {
 	const [volumeHover, setVolumeHover] = useState<number | undefined>();
@@ -239,7 +240,7 @@ function TokenPage() {
 
 				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
 
-					1111
+					<CandleChart />
 
 				</div>
 
