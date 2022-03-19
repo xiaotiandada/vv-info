@@ -17,6 +17,18 @@ import CurrencyLogo from './components/CurrencyLogo';
 import {networkPrefix} from './utils/networkPrefix';
 import Percent from './components/Percent';
 import CandleChart from './components/CandleChart';
+import {data as CandleChartData} from './components/CandleChart/data';
+import dayjs from 'dayjs';
+
+// eslint-disable-next-line no-unused-vars
+enum ChartView {
+	// eslint-disable-next-line no-unused-vars
+	TVL,
+	// eslint-disable-next-line no-unused-vars
+	VOL,
+	// eslint-disable-next-line no-unused-vars
+	PRICE,
+}
 
 function UniswapOverview() {
 	const [volumeHover, setVolumeHover] = useState<number | undefined>();
@@ -107,21 +119,21 @@ function UniswapOverview() {
 									// Active={volumeWindow === VolumeWindow.daily}
 									onClick={() => setVolumeWindow(VolumeWindow.daily)}
 								>
-                    D
+									D
 								</button>
 								<button
 									// Active={volumeWindow === VolumeWindow.weekly}
 									style={{marginLeft: '8px'}}
 									onClick={() => setVolumeWindow(VolumeWindow.weekly)}
 								>
-                    W
+									W
 								</button>
 								<button
 									// Active={volumeWindow === VolumeWindow.monthly}
 									style={{marginLeft: '8px'}}
 									onClick={() => setVolumeWindow(VolumeWindow.monthly)}
 								>
-                    M
+									M
 								</button>
 							</div>
 						}
@@ -181,6 +193,13 @@ function TokenPage() {
 	const {addresses: allTokenData} = useTopTokenAddresses();
 	const {data: allTokens} = useFetchedTokenDatas(allTokenData || []);
 
+	// Chart labels
+	// eslint-disable-next-line no-unused-vars
+	const [view, setView] = useState(ChartView.PRICE);
+	// eslint-disable-next-line no-unused-vars
+	const [latestValue, setLatestValue] = useState<number | undefined>();
+	const [valueLabel, setValueLabel] = useState<string | undefined>();
+
 	const tokenData = useTokenData(address, allTokens || {});
 	console.log('TokenPage allTokens', allTokens);
 
@@ -239,11 +258,25 @@ function TokenPage() {
 				</div>
 
 				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
+					<div>
+						<span className="tabular-nums">
+							{formatDollarAmount(tokenData.priceUSD, 2)}
+						</span>
+					</div>
+					<div>
+						{valueLabel ? (
+							<span className="tabular-nums">{valueLabel} (UTC)</span>
+						) : (
+							<span className="tabular-nums">{dayjs.utc().format('MMM D, YYYY')}</span>
+						)}
+					</div>
 
-					<CandleChart />
-
+					<CandleChart data={CandleChartData}
+						setValue={setLatestValue}
+						setLabel={setValueLabel}
+					// Color={backgroundColor}
+					/>
 				</div>
-
 			</div>
 		</div>
 	);
