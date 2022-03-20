@@ -2,7 +2,7 @@ import React, {useMemo, useState} from 'react';
 import TokenTable from './components/tokens/TokenTable';
 import {useTopTokenAddresses} from './data/tokens/topTokens';
 import {TokenData, useFetchedTokenDatas} from './data/tokens/tokenData';
-import {getEtherscanLink, notEmpty, shortenAddress} from './utils';
+import {currentTimestamp, getEtherscanLink, notEmpty, shortenAddress} from './utils';
 import {TOKEN_HIDE} from './constants';
 import LineChart from './components/LineChart/alt';
 import BarChart from './components/BarChart/alt';
@@ -12,13 +12,24 @@ import {useFetchGlobalChartData} from './data/protocol/chart';
 import {unixToDate} from './utils/date';
 import {VolumeWindow} from './types';
 import TopTokenMovers from './components/tokens/TopTokenMovers';
-import {useTokenData} from './data/tokens/hooks';
+import {useTokenChartData, useTokenData, useTokenPriceData} from './data/tokens/hooks';
 import CurrencyLogo from './components/CurrencyLogo';
 import {networkPrefix} from './utils/networkPrefix';
 import Percent from './components/Percent';
 import CandleChart from './components/CandleChart';
-import {data as CandleChartData} from './components/CandleChart/data';
 import dayjs from 'dayjs';
+import {ONE_HOUR_SECONDS, TimeWindow} from './constants/intervals';
+import {LocalLoader} from './components/Loader';
+import {useCMCLink} from './hooks/useCMCLink';
+import CMCLogo from './assets/images/cmc.png';
+import styled from 'styled-components';
+
+const StyledCMCLogo = styled.img`
+  height: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
 
 // eslint-disable-next-line no-unused-vars
 enum ChartView {
@@ -29,6 +40,7 @@ enum ChartView {
 	// eslint-disable-next-line no-unused-vars
 	PRICE,
 }
+const DEFAULT_TIME_WINDOW = TimeWindow.WEEK;
 
 function UniswapOverview() {
 	const [volumeHover, setVolumeHover] = useState<number | undefined>();
@@ -196,14 +208,64 @@ function TokenPage() {
 	// Chart labels
 	// eslint-disable-next-line no-unused-vars
 	const [view, setView] = useState(ChartView.PRICE);
-	// eslint-disable-next-line no-unused-vars
+
 	const [latestValue, setLatestValue] = useState<number | undefined>();
 	const [valueLabel, setValueLabel] = useState<string | undefined>();
 
 	const tokenData = useTokenData(address, allTokens || {});
 	console.log('TokenPage allTokens', allTokens);
 
-	console.log('TokenPage tokenData', tokenData);
+	const chartData = useTokenChartData(address);
+	console.log('TokenPage chartData', chartData);
+
+	const formattedTvlData = useMemo(() => {
+		if (chartData) {
+			return chartData.map(day => ({
+				time: unixToDate(day.date),
+				value: day.totalValueLockedUSD,
+			}));
+		}
+
+		return [];
+	}, [chartData]);
+
+	const formattedVolumeData = useMemo(() => {
+		if (chartData) {
+			return chartData.map(day => ({
+				time: unixToDate(day.date),
+				value: day.volumeUSD,
+			}));
+		}
+
+		return [];
+	}, [chartData]);
+
+	const [timeWindow] = useState(DEFAULT_TIME_WINDOW);
+
+	// Pricing data
+	const priceData = useTokenPriceData(address, ONE_HOUR_SECONDS, timeWindow);
+	console.log('tokenpage priceData', priceData);
+
+	const adjustedToCurrent = useMemo(() => {
+		if (priceData && tokenData && priceData.length > 0) {
+			const adjusted = Object.assign([], priceData);
+			adjusted.push({
+				time: currentTimestamp() / 1000,
+				open: priceData[priceData.length - 1].close,
+				close: tokenData?.priceUSD,
+				high: tokenData?.priceUSD,
+				low: priceData[priceData.length - 1].close,
+			});
+			return adjusted;
+		}
+
+		return undefined;
+	}, [priceData, tokenData]);
+
+	console.log('tokenpage adjustedToCurrent', adjustedToCurrent);
+
+	// Check for link to CMC
+	const cmcLink = useCMCLink(address);
 
 	if (!tokenData) {
 		return <span>Loading...</span>;
@@ -231,6 +293,16 @@ function TokenPage() {
 				<br />
 				<span>{formatDollarAmount(tokenData.priceUSD)}<span className="ml-2">(<Percent value={tokenData.priceUSDChange} />)</span></span>
 
+				<div>
+					{cmcLink && (
+						<a
+							href={cmcLink}
+						>
+							<StyledCMCLogo src={CMCLogo} />
+						</a>
+					)}
+				</div>
+
 				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
 
 					<div>
@@ -257,6 +329,7 @@ function TokenPage() {
 
 				</div>
 
+				{/* Price */}
 				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
 					<div>
 						<span className="tabular-nums">
@@ -271,10 +344,64 @@ function TokenPage() {
 						)}
 					</div>
 
-					<CandleChart data={CandleChartData}
+					{
+						adjustedToCurrent ? (
+							<CandleChart
+								data={adjustedToCurrent}
+								setValue={setLatestValue}
+								setLabel={setValueLabel}
+							/>
+						) : (
+							<LocalLoader fill={false} />
+						)
+					}
+				</div>
+				{/* TVL */}
+				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
+					<div>
+						<span className="tabular-nums">
+							{formatDollarAmount(formattedTvlData[formattedTvlData.length - 1]?.value)}
+						</span>
+					</div>
+					<div>
+						{valueLabel ? (
+							<span className="tabular-nums">{valueLabel} (UTC)</span>
+						) : (
+							<span className="tabular-nums">{dayjs.utc().format('MMM D, YYYY')}</span>
+						)}
+					</div>
+
+					<LineChart
+						data={formattedTvlData}
+						minHeight={340}
+						value={latestValue}
+						label={valueLabel}
 						setValue={setLatestValue}
 						setLabel={setValueLabel}
-					// Color={backgroundColor}
+					/>
+				</div>
+				{/* VOL */}
+				<div className="bg-[#191B1F] rounded-[16px] p-4 grid gap-8 my-8">
+					<div>
+						<span className="tabular-nums">
+							{formatDollarAmount(formattedVolumeData[formattedVolumeData.length - 1]?.value)}
+						</span>
+					</div>
+					<div>
+						{valueLabel ? (
+							<span className="tabular-nums">{valueLabel} (UTC)</span>
+						) : (
+							<span className="tabular-nums">{dayjs.utc().format('MMM D, YYYY')}</span>
+						)}
+					</div>
+
+					<BarChart
+						data={formattedVolumeData}
+						minHeight={340}
+						value={latestValue}
+						label={valueLabel}
+						setValue={setLatestValue}
+						setLabel={setValueLabel}
 					/>
 				</div>
 			</div>
